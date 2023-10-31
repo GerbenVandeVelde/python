@@ -1,30 +1,31 @@
 import sys
 import json
 from ping3 import ping
+from jinja2 import Template
+import time
 
 repeat = True
 array_input = []
 servers = []
 servers_running = []
 ant = 0
-server =""
 
-def main():
+def main(nr,test):
+    global array_input
     global repeat
     global ant
-    global server
-    if __name__=='__main__':
-        if len(sys.argv)>2:
-            ant=int(sys.argv[1])
-            server = sys.argv[2]
-            servers.append(server)
-            array_input.append(ant)
-            while repeat:
-                ant = int(input("1. toevoegen|2. verwijderen|3. lijst tonen|stop met input 000"))
-                if ant == 000:
-                     repeat = False
-                else:
-                    serversAanpassen(ant)
+    global servers
+    ant=int(nr)
+    server = test
+    servers.append(server)
+    array_input.append(ant)
+    print(servers)
+    while repeat:
+        ant = int(input("1. toevoegen|2. verwijderen|3. lijst tonen|stop met input 000"))
+        if ant == 000:
+            repeat = False
+        else:
+            serversAanpassen(ant)
     data = {
     "servers": servers,
     "numbers": array_input
@@ -55,16 +56,19 @@ def serversAanpassen(keuze):
                     print("niet geldig")
 
 def check():
+    run =True
+    global servers
     global servers_running
-    with open('list.json', 'r') as json_file:
-        data = json.load(json_file)
-        servers = data['servers']
-    for i in range(len(servers)):
-        resp = ping(servers[i])
-        if resp == False:
-            servers_running.append("false")
-        else:
-            servers_running.append("true")
+    while run:
+        with open('list.json', 'r') as json_file:
+            data = json.load(json_file)
+            servers = data['servers']
+        for i in range(len(servers)):
+            resp = ping(servers[i])
+            if resp == False:
+                servers_running.append("false")
+            else:
+                servers_running.append("true")
         serverRun = {
             "servers": servers,
             "running": servers_running
@@ -72,24 +76,22 @@ def check():
         json_string = json.dumps(serverRun)
         with open("final.json", "w") as outfile:
             outfile.write(json_string)
-        with open('index.html', 'w') as html_file:
-            html_file.write(f"""<!DOCTYPE html>
-            <html>
-            <head>
-            <title>JSON Data Page</title>
-            </head>
-            <body>
-            <h1>Mijn servers</h1>
-            <pre">{json_string}</pre>
-            </body>
-            </html>""")
-
+        with open('template.html', 'r') as template_file:
+            template = Template(template_file.read())
+        data = list(zip(servers, servers_running))
+        rendered_html = template.render(data=data)
+        with open('index.html', 'w') as html_file: 
+            html_file.write(rendered_html)
+        servers_running.clear()
+        time.sleep(120)
         
-            
+                 
 def modus():
     positie = input("Wilt u starten in management of in check")
     if positie == "management":
-        main()
+        if __name__=='__main__':
+            if len(sys.argv)>2:
+                main(sys.argv[1],sys.argv[2])
     elif positie == "check":
         check()
     else: 
