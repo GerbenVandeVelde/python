@@ -1,2 +1,6 @@
 virtualenv
 list.json
+final.json
+node_modules
+tijdelijk.txt
+index.html
